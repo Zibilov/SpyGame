@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SPY — Ajan Oyunu</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #13131a;
+  --surface2: #1c1c26;
+  --accent: #e63946;
+  --accent2: #ff6b6b;
+  --gold: #ffd166;
+  --text: #f0f0f5;
+  --muted: #6b6b80;
+  --border: rgba(255,255,255,0.07);
+  --radius: 14px;
+  --font-head: 'Bebas Neue', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  height: 100dvh;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+/* Background grid effect */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(230,57,70,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(230,57,70,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Glow blob */
+body::after {
+  content: '';
+  position: fixed;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(230,57,70,0.08) 0%, transparent 70%);
+  top: -100px; left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.screen {
+  position: relative;
+  z-index: 1;
+  height: 100dvh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 50px 16px 24px;
+  -webkit-overflow-scrolling: touch;
+  text-align: center;
+}
+
+.screen.centered {
+  justify-content: center;
+}
+
+.hidden { display: none !important; }
+
+/* ── HEADER ── */
+.game-logo {
+  font-family: var(--font-head);
+  font-size: clamp(56px, 12vw, 96px);
+  letter-spacing: 6px;
+  color: var(--text);
+  line-height: 1;
+  position: relative;
+  display: inline-block;
+}
+.game-logo span {
+  color: var(--accent);
+}
+.logo-tagline {
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 4px;
+  text-align: center;
+}
+
+/* ── SETUP CARD ── */
+.setup-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px 20px;
+  width: 100%;
+  max-width: 480px;
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+.section-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.opt-btn {
+  background: var(--surface2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.opt-btn:hover {
+  color: var(--text);
+  border-color: rgba(255,255,255,0.15);
+}
+.opt-btn.selected {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  box-shadow: 0 0 16px rgba(230,57,70,0.4);
+}
+
+/* Player name inputs */
+#nameInputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.player-input-wrap {
+  position: relative;
+}
+.player-input-wrap label {
+  position: absolute;
+  top: -8px;
+  left: 10px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--surface);
+  padding: 0 4px;
+}
+.player-input-wrap input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 12px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.player-input-wrap input:focus {
+  border-color: var(--accent);
+}
+
+/* Start button */
+.start-btn {
+  width: 100%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 16px;
+  font-family: var(--font-head);
+  font-size: 22px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 24px rgba(230,57,70,0.35);
+}
+.start-btn:hover {
+  background: var(--accent2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(230,57,70,0.45);
+}
+.start-btn:active { transform: translateY(0); }
+
+/* ── GAME SCREEN ── */
+#gameScreen {
+  text-align: center;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Card flip reveal */
+.reveal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 48px 32px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+  margin: 24px 0;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.reveal-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(230,57,70,0.08), transparent 60%);
+}
+.reveal-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.reveal-card:active { transform: scale(0.98); }
+
+.player-name-display {
+  font-family: var(--font-head);
+  font-size: clamp(32px, 8vw, 52px);
+  letter-spacing: 3px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.tap-hint {
+  font-size: 12px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tap-hint::before, .tap-hint::after {
+  content: '·';
+  color: var(--accent);
+}
+
+/* Role reveal */
+.role-word {
+  font-family: var(--font-head);
+  font-size: clamp(44px, 11vw, 72px);
+  letter-spacing: 4px;
+}
+.role-word.spy-reveal { color: var(--accent); text-shadow: 0 0 40px rgba(230,57,70,0.5); }
+.role-word.word-reveal { color: var(--gold); text-shadow: 0 0 40px rgba(255,209,102,0.3); }
+.role-sub {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* Timer */
+.timer-display {
+  font-family: var(--font-head);
+  font-size: clamp(72px, 20vw, 120px);
+  letter-spacing: 4px;
+  line-height: 1;
+  color: var(--text);
+  transition: color 0.3s;
+}
+.timer-display.urgent { color: var(--accent); animation: pulse 0.5s infinite alternate; }
+@keyframes pulse { from { opacity: 1; } to { opacity: 0.6; } }
+
+.timer-label {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* Voting */
+.vote-title {
+  font-family: var(--font-head);
+  font-size: 28px;
+  letter-spacing: 3px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.vote-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+.vote-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.vote-btn {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.vote-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+/* Progress dots */
+.progress-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  transition: all 0.3s;
+}
+.dot.done { background: var(--accent); border-color: var(--accent); }
+.dot.active { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 8px rgba(255,209,102,0.5); }
+
+/* Result screen */
+.result-big {
+  font-family: var(--font-head);
+  font-size: clamp(28px, 8vw, 48px);
+  letter-spacing: 3px;
+  margin-bottom: 6px;
+}
+.spy-name-result {
+  font-family: var(--font-head);
+  font-size: clamp(44px, 12vw, 72px);
+  color: var(--accent);
+  letter-spacing: 4px;
+  text-shadow: 0 0 40px rgba(230,57,70,0.5);
+}
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 28px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.action-btn {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 13px 28px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 6px;
+}
+.action-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.action-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  box-shadow: 0 4px 20px rgba(230,57,70,0.3);
+}
+.action-btn.primary:hover {
+  background: var(--accent2);
+  color: white;
+}
+
+/* Toast */
+#toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: transform 0.3s ease;
+  z-index: 100;
+  white-space: nowrap;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+/* Step number badge */
+.step-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  padding: 6px 14px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+.step-badge span { color: var(--accent); font-weight: 600; }
+
+/* Divider */
+.divider { height: 1px; background: var(--border); margin: 18px 0; }
+
+/* Fullscreen button */
+#fsBtn {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 999;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+#fsBtn:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+/* Remove scroll indicator on small screens */
+@media (max-height: 750px) {
+  .setup-card { margin-top: 8px; }
+  .game-logo { font-size: 48px; }
+  .logo-tagline { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Fullscreen button -->
+<button id="fsBtn" onclick="toggleFullscreen()" title="Tam Ekran">⛶</button>
+
+<!-- ── SETUP SCREEN ── -->
+<div id="setupScreen" class="screen" style="justify-content:center;align-items:center;">
+  <div style="padding-top: 0; text-align:center;">
+    <div class="game-logo">S<span>P</span>Y</div>
+    <div class="logo-tagline">Kim ajan? Kim masum?</div>
+  </div>
+
+  <div class="setup-card">
+
+    <!-- Language -->
+    <div class="section-label">Dil / Language</div>
+    <div class="btn-group" id="langGroup">
+      <button class="opt-btn" onclick="selectOpt('langGroup', this, 'lang', 'tr')">🇹🇷 Türkçe</button>
+      <button class="opt-btn" onclick="selectOpt('langGroup', this, 'lang', 'en')">🇬🇧 English</button>
+    </div>
+
+    <!-- Time -->
+    <div class="section-label" id="lblTime">Süre</div>
+    <div class="btn-group" id="timeGroup">
+      <button class="opt-btn" onclick="selectOpt('timeGroup', this, 'time', 120)">2 dk</button>
+      <button class="opt-btn" onclick="selectOpt('timeGroup', this, 'time', 300)">5 dk</button>
+      <button class="opt-btn" onclick="selectOpt('timeGroup', this, 'time', 420)">7 dk</button>
+      <button class="opt-btn" onclick="selectOpt('timeGroup', this, 'time', 600)">10 dk</button>
+    </div>
+
+    <!-- Category -->
+    <div class="section-label" id="lblCat">Kategori</div>
+    <div class="btn-group" id="catGroup">
+      <button class="opt-btn" onclick="selectOpt('catGroup', this, 'category', 'general')">🌍 Genel</button>
+      <button class="opt-btn" onclick="selectOpt('catGroup', this, 'category', 'jobs')">💼 Meslekler</button>
+      <button class="opt-btn" onclick="selectOpt('catGroup', this, 'category', 'sports')">⚽ Sporlar</button>
+      <button class="opt-btn" onclick="selectOpt('catGroup', this, 'category', 'countries')">🗺️ Ülkeler</button>
+      <button class="opt-btn" onclick="selectOpt('catGroup', this, 'category', 'places')">🏛️ Mekânlar</button>
+    </div>
+
+    <!-- Players -->
+    <div class="section-label" id="lblPlayers">Oyuncu Sayısı</div>
+    <div class="btn-group" id="playerGroup">
+      <button class="opt-btn" onclick="selectOpt('playerGroup', this, 'players', 4)">4</button>
+      <button class="opt-btn" onclick="selectOpt('playerGroup', this, 'players', 5)">5</button>
+      <button class="opt-btn" onclick="selectOpt('playerGroup', this, 'players', 6)">6</button>
+      <button class="opt-btn" onclick="selectOpt('playerGroup', this, 'players', 7)">7</button>
+      <button class="opt-btn" onclick="selectOpt('playerGroup', this, 'players', 8)">8</button>
+      <button class="opt-btn" onclick="selectOpt('playerGroup', this, 'players', 9)">9</button>
+      <button class="opt-btn" onclick="selectOpt('playerGroup', this, 'players', 10)">10</button>
+    </div>
+
+    <!-- Name inputs -->
+    <div id="nameInputs"></div>
+
+    <button class="start-btn" onclick="startGame()">BAŞLAT</button>
+  </div>
+</div>
+
+<!-- ── GAME SCREEN WRAPPER ── -->
+<div id="gameScreenWrapper" class="screen hidden" style="justify-content:center;align-items:center;">
+<div id="gameScreen" style="width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 16px;">
+
+  <!-- Reveal phase -->
+  <div id="revealPhase" style="width:100%;display:flex;flex-direction:column;align-items:center;">
+    <div class="progress-dots" id="progressDots"></div>
+    <div class="step-badge" id="stepBadge"><span id="stepNum">1</span> / <span id="stepTotal">4</span></div>
+
+    <div class="reveal-card" id="revealCard" onclick="handleReveal()">
+      <div class="player-name-display" id="cardPlayerName">Oyuncu 1</div>
+      <div class="tap-hint" id="tapHint">Ekrana dokun</div>
+      <div id="roleContent" class="hidden">
+        <div class="role-word" id="roleWord"></div>
+        <div class="role-sub" id="roleSub"></div>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--muted);letter-spacing:1px;">Rolünü gör, ardından tekrar dokun →</p>
+  </div>
+
+  <!-- Timer phase -->
+  <div id="timerPhase" class="hidden" style="text-align:center">
+    <div class="step-badge">⏱ <span style="color:var(--accent)">TARTIŞMA</span></div>
+    <div class="timer-display" id="timerDisplay">5:00</div>
+    <div class="timer-label" id="timerLabel">Süre dolunca oylama başlar</div>
+    <div style="margin-top:24px">
+      <button class="action-btn primary" onclick="skipToVote()">Erken Oylama →</button>
+    </div>
+  </div>
+
+  <!-- Voting phase -->
+  <div id="votingPhase" class="hidden" style="width:100%;display:flex;flex-direction:column;align-items:center;">
+    <div class="vote-title" id="voteTitle">SPY KİM?</div>
+    <div class="vote-subtitle" id="voteSubtitle">Her oyuncu bir oy kullanır</div>
+    <div class="vote-grid" id="voteGrid"></div>
+    <div style="text-align:center;margin-top:4px">
+      <span style="font-size:12px;color:var(--muted);">Kalan oy: <strong id="votesLeftNum">4</strong></span>
+    </div>
+  </div>
+
+  <!-- Result phase -->
+  <div id="resultPhase" class="hidden" style="width:100%;display:flex;flex-direction:column;align-items:center;">
+    <div class="result-card">
+      <div class="result-big" id="mostVotedLabel">En Çok Oy Alan</div>
+      <div class="spy-name-result" id="mostVotedName">—</div>
+      <div class="divider"></div>
+      <div style="font-size:12px;color:var(--muted);letter-spacing:2px;margin-bottom:10px">GERÇEK AJAN</div>
+      <div class="spy-name-result" id="realSpyName" style="font-size:clamp(28px,7vw,44px)">—</div>
+      <div id="resultVerdict" style="margin-top:16px;font-size:14px;color:var(--muted)"></div>
+    </div>
+    <div>
+      <button class="action-btn primary" onclick="restartGame()">🔄 Aynı Grupla Yeni Oyun</button>
+      <br>
+      <button class="action-btn" onclick="location.reload()">⚙️ Sıfırdan Kurgula</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ── State ──
+let cfg = { lang: null, time: null, category: null, players: null };
+let playerNames = [];
+let roles = [], word = '', spyIndex = -1;
+let currentPlayer = 0, showingRole = false;
+let timerInterval, timerSec = 0;
+let votes = {}, totalVotes = 0;
+
+// ── Word bank ──
+const WORDS = {
+  tr: {
+    general: ['Kedi','Araba','Okul','Futbol','Telefon','Bilgisayar','Pizza','Müzik','Film','Kitap','Uçak','Gemi','Tren','Doktor','Şef','Asker','Pilot','Öğretmen','Ayakkabı','Şapka'],
+    jobs: ['Doktor','Avukat','Mühendis','Öğretmen','Polis','Şef','Pilot','Mimar','Hemşire','Gazeteci'],
+    sports: ['Futbol','Basketbol','Yüzme','Tenis','Voleybol','Boks','Bisiklet','Kayak','Güreş','Golf'],
+    countries: ['Türkiye','Japonya','Brezilya','Fransa','Avustralya','Meksika','Mısır','Hindistan','Rusya','Kanada'],
+    places: ['Hastane','Havalimanı','Kütüphane','Restoran','Otel','Banka','Sinema','Müze','Plaj','Pazar']
+  },
+  en: {
+    general: ['Cat','Car','School','Football','Phone','Computer','Pizza','Music','Film','Book','Plane','Ship','Train','Doctor','Chef','Soldier','Pilot','Teacher','Shoes','Hat'],
+    jobs: ['Doctor','Lawyer','Engineer','Teacher','Police','Chef','Pilot','Architect','Nurse','Journalist'],
+    sports: ['Football','Basketball','Swimming','Tennis','Volleyball','Boxing','Cycling','Skiing','Wrestling','Golf'],
+    countries: ['Turkey','Japan','Brazil','France','Australia','Mexico','Egypt','India','Russia','Canada'],
+    places: ['Hospital','Airport','Library','Restaurant','Hotel','Bank','Cinema','Museum','Beach','Market']
+  }
+};
+
+const LABELS = {
+  tr: {
+    timeLabel: 'Süre', catLabel: 'Kategori', playersLabel: 'Oyuncu Sayısı',
+    startBtn: 'BAŞLAT', tap: 'Ekrana dokun', tapNext: 'Devam etmek için dokun',
+    youAreSpy: 'AJANSIN!', spySub: 'Kimse seni tanımasın 🕵️',
+    yourWord: 'Senin Kelimen', wordSub: 'Bunu kimseye söyleme',
+    startTimer: 'TARTIŞMAYA BAŞLA', timerLabel: 'Süre dolunca oylama başlar',
+    skipVote: 'Erken Oylama →', voteTitle: 'SPY KİM?', voteSub: 'Her oyuncu bir oy kullanır',
+    votesLeft: 'Kalan oy', mostVotedLabel: 'En Çok Oy Alan', realSpy: 'GERÇEK AJAN',
+    correct: '✅ Doğru! Ajan yakalandı.', wrong: '❌ Yanlış! Ajan kurtuldu.',
+    newGame: '🔄 Yeni Oyun', playerPlaceholder: 'Oyuncu'
+  },
+  en: {
+    timeLabel: 'Duration', catLabel: 'Category', playersLabel: 'Players',
+    startBtn: 'START', tap: 'Tap the screen', tapNext: 'Tap to continue',
+    youAreSpy: 'YOU\'RE THE SPY!', spySub: 'Don\'t get caught 🕵️',
+    yourWord: 'Your Word', wordSub: 'Keep this secret',
+    startTimer: 'START DISCUSSION', timerLabel: 'Voting begins when time runs out',
+    skipVote: 'Early Vote →', voteTitle: 'WHO\'S THE SPY?', voteSub: 'Each player casts one vote',
+    votesLeft: 'Votes left', mostVotedLabel: 'Most Voted', realSpy: 'REAL SPY',
+    correct: '✅ Correct! Spy caught.', wrong: '❌ Wrong! Spy escaped.',
+    newGame: '🔄 New Game', playerPlaceholder: 'Player'
+  }
+};
+
+function L(key) { return (LABELS[cfg.lang] || LABELS.tr)[key]; }
+
+// ── Fullscreen ──
+function toggleFullscreen() {
+  const btn = document.getElementById('fsBtn');
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    const el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    btn.textContent = '✕';
+    btn.title = 'Tam Ekrandan Çık';
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    btn.textContent = '⛶';
+    btn.title = 'Tam Ekran';
+  }
+}
+
+document.addEventListener('fullscreenchange', () => {
+  const btn = document.getElementById('fsBtn');
+  if (!document.fullscreenElement) { btn.textContent = '⛶'; btn.title = 'Tam Ekran'; }
+});
+document.addEventListener('webkitfullscreenchange', () => {
+  const btn = document.getElementById('fsBtn');
+  if (!document.webkitFullscreenElement) { btn.textContent = '⛶'; btn.title = 'Tam Ekran'; }
+});
+
+// ── Setup ──
+function selectOpt(groupId, btn, key, val) {
+  document.querySelectorAll('#'+groupId+' .opt-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  cfg[key] = val;
+  if (key === 'lang') updateLangUI();
+  if (key === 'players') renderNameInputs(val);
+}
+
+function updateLangUI() {
+  const l = cfg.lang;
+  document.getElementById('lblTime').textContent = L('timeLabel');
+  document.getElementById('lblCat').textContent = L('catLabel');
+  document.getElementById('lblPlayers').textContent = L('playersLabel');
+  document.querySelector('.start-btn').textContent = L('startBtn');
+  document.querySelector('.logo-tagline').textContent = l === 'en' ? 'Who is the spy?' : 'Kim ajan? Kim masum?';
+  // Re-render name inputs with new lang
+  if (cfg.players) renderNameInputs(cfg.players);
+}
+
+function renderNameInputs(count) {
+  const ctn = document.getElementById('nameInputs');
+  ctn.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const wrap = document.createElement('div');
+    wrap.className = 'player-input-wrap';
+    const lbl = document.createElement('label');
+    lbl.textContent = (cfg.lang === 'en' ? 'Player' : 'Oyuncu') + ' ' + (i+1);
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.placeholder = (cfg.lang === 'en' ? 'Player' : 'Oyuncu') + ' ' + (i+1);
+    inp.maxLength = 16;
+    wrap.appendChild(lbl);
+    wrap.appendChild(inp);
+    ctn.appendChild(wrap);
+  }
+}
+
+function showToast(msg, duration=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function startGame() {
+  if (!cfg.lang) { showToast('⚠️ Dil seçin / Select language'); return; }
+  if (!cfg.time) { showToast('⚠️ ' + (cfg.lang==='en'?'Select duration':'Süre seçin')); return; }
+  if (!cfg.category) { showToast('⚠️ ' + (cfg.lang==='en'?'Select category':'Kategori seçin')); return; }
+  if (!cfg.players) { showToast('⚠️ ' + (cfg.lang==='en'?'Select player count':'Oyuncu sayısı seçin')); return; }
+
+  // Collect names
+  playerNames = [];
+  document.querySelectorAll('#nameInputs input').forEach((inp, i) => {
+    let v = inp.value.trim();
+    if (!v) v = (cfg.lang==='en'?'Player':'Oyuncu') + ' ' + (i+1);
+    playerNames.push(v);
+  });
+
+  // Pick word
+  const bank = WORDS[cfg.lang][cfg.category];
+  word = bank[Math.floor(Math.random() * bank.length)];
+
+  // Assign roles
+  roles = Array(cfg.players).fill('PLAYER');
+  spyIndex = Math.floor(Math.random() * cfg.players);
+  roles[spyIndex] = 'SPY';
+
+  // Switch screens
+  document.getElementById('setupScreen').classList.add('hidden');
+  document.getElementById('gameScreenWrapper').classList.remove('hidden');
+
+  initReveal();
+}
+
+// ── Reveal phase ──
+function initReveal() {
+  currentPlayer = 0; showingRole = false;
+  document.getElementById('revealPhase').classList.remove('hidden');
+  document.getElementById('timerPhase').classList.add('hidden');
+  document.getElementById('votingPhase').classList.add('hidden');
+  document.getElementById('resultPhase').classList.add('hidden');
+
+  // Build progress dots
+  const dots = document.getElementById('progressDots');
+  dots.innerHTML = '';
+  for (let i = 0; i < cfg.players; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i===0?' active':'');
+    dots.appendChild(d);
+  }
+
+  document.getElementById('stepTotal').textContent = cfg.players;
+  renderRevealIdle();
+}
+
+function renderRevealIdle() {
+  document.getElementById('cardPlayerName').textContent = playerNames[currentPlayer];
+  document.getElementById('stepNum').textContent = currentPlayer + 1;
+  document.getElementById('tapHint').classList.remove('hidden');
+  document.getElementById('roleContent').classList.add('hidden');
+}
+
+function handleReveal() {
+  if (!showingRole) {
+    // Show role
+    const isSpy = roles[currentPlayer] === 'SPY';
+    const rw = document.getElementById('roleWord');
+    const rs = document.getElementById('roleSub');
+    if (isSpy) {
+      rw.textContent = L('youAreSpy');
+      rw.className = 'role-word spy-reveal';
+      rs.textContent = L('spySub');
+    } else {
+      rw.textContent = word;
+      rw.className = 'role-word word-reveal';
+      rs.textContent = L('wordSub');
+    }
+    document.getElementById('tapHint').classList.add('hidden');
+    document.getElementById('roleContent').classList.remove('hidden');
+    showingRole = true;
+  } else {
+    // Next player
+    updateDot(currentPlayer, 'done');
+    currentPlayer++;
+    showingRole = false;
+
+    if (currentPlayer >= cfg.players) {
+      // All done → show start timer
+      document.getElementById('revealPhase').classList.add('hidden');
+      showTimerStart();
+    } else {
+      updateDot(currentPlayer, 'active');
+      renderRevealIdle();
+    }
+  }
+}
+
+function updateDot(i, state) {
+  const dots = document.querySelectorAll('.dot');
+  if (dots[i]) {
+    dots[i].className = 'dot ' + state;
+  }
+}
+
+// ── Timer phase ──
+function showTimerStart() {
+  document.getElementById('timerPhase').classList.remove('hidden');
+  timerSec = cfg.time;
+  renderTimer();
+  timerInterval = setInterval(() => {
+    timerSec--;
+    if (timerSec <= 0) { clearInterval(timerInterval); startVoting(); return; }
+    renderTimer();
+  }, 1000);
+}
+
+function renderTimer() {
+  const m = Math.floor(timerSec / 60);
+  const s = timerSec % 60;
+  document.getElementById('timerDisplay').textContent = m + ':' + (s<10?'0':'')+s;
+  document.getElementById('timerDisplay').className = 'timer-display' + (timerSec <= 30 ? ' urgent' : '');
+}
+
+function skipToVote() {
+  clearInterval(timerInterval);
+  startVoting();
+}
+
+// ── Voting phase ──
+function startVoting() {
+  document.getElementById('timerPhase').classList.add('hidden');
+  document.getElementById('votingPhase').classList.remove('hidden');
+
+  votes = {};
+  totalVotes = 0;
+
+  document.getElementById('voteTitle').textContent = L('voteTitle');
+  document.getElementById('voteSubtitle').textContent = L('voteSub');
+  document.getElementById('votesLeftNum').textContent = cfg.players;
+
+  renderVoteGrid();
+}
+
+function renderVoteGrid() {
+  const grid = document.getElementById('voteGrid');
+  grid.innerHTML = '';
+  playerNames.forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'vote-btn';
+    const count = votes[name] || 0;
+    btn.innerHTML = `<span>${name}</span>${count > 0 ? `<span style="background:var(--accent);color:white;border-radius:50%;width:20px;height:20px;font-size:11px;display:flex;align-items:center;justify-content:center">${count}</span>` : ''}`;
+    btn.onclick = () => castVote(name);
+    grid.appendChild(btn);
+  });
+}
+
+function castVote(name) {
+  if (totalVotes >= cfg.players) return;
+  votes[name] = (votes[name] || 0) + 1;
+  totalVotes++;
+  document.getElementById('votesLeftNum').textContent = cfg.players - totalVotes;
+  renderVoteGrid();
+  if (totalVotes >= cfg.players) showResult();
+}
+
+// ── Restart with same group ──
+function restartGame() {
+  const bank = WORDS[cfg.lang][cfg.category];
+  word = bank[Math.floor(Math.random() * bank.length)];
+  roles = Array(cfg.players).fill('PLAYER');
+  spyIndex = Math.floor(Math.random() * cfg.players);
+  roles[spyIndex] = 'SPY';
+  document.getElementById('resultPhase').classList.add('hidden');
+  document.getElementById('gameScreenWrapper').classList.remove('hidden');
+  initReveal();
+}
+
+// ── Result phase ──
+function showResult() {
+  document.getElementById('votingPhase').classList.add('hidden');
+  document.getElementById('resultPhase').classList.remove('hidden');
+
+  const mostVoted = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
+  const realSpy = playerNames[spyIndex];
+
+  document.getElementById('mostVotedLabel').textContent = L('mostVotedLabel');
+  document.getElementById('mostVotedName').textContent = mostVoted;
+  document.getElementById('realSpyName').textContent = realSpy;
+  document.getElementById('resultVerdict').textContent = mostVoted === realSpy ? L('correct') : L('wrong');
+}
+</script>
+</body>
+</html>
